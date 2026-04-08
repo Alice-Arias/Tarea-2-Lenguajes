@@ -11,13 +11,13 @@ Incluye funcionalidades de creación de registros y análisis de datos utilizand
 
 ---
 
-## 👤 Integrante
+##  Integrante
 
 - **Alice Arias Salazar**
 
 ---
 
-## 📚 Información académica
+##  Información académica
 
 - **Curso:** Lenguajes de Programación  
 - **Semestre:** I Semestre, 2026  
@@ -27,7 +27,7 @@ Incluye funcionalidades de creación de registros y análisis de datos utilizand
 
 ---
 
-## 📖 Descripción
+##  Descripción
 
 Este sistema permite gestionar matrículas universitarias mediante el uso de archivos CSV, facilitando tanto el registro como el análisis de la información.
 
@@ -35,7 +35,7 @@ El programa se divide en dos componentes principales: un creador de registros y 
 
 ---
 
-## ⚙️ Funcionalidades
+##  Funcionalidades
 
 ###  Creador
 - Agregar nuevas matrículas al archivo CSV  

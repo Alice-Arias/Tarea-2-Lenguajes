@@ -1,10 +1,13 @@
 use "creador.sml";
 
+use "creador.sml";
+
 fun main () =
     let
         val _ = crearArchivo ()
-        val datos = leerDatos ()
-        val _ = agregarEstudiante datos
+        val _ = menu []
     in
         print "Todo listo\n"
     end;
+
+val _ = main ();

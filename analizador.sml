@@ -399,7 +399,7 @@ fun mostrarResultadosBusquedaCursos resultados =
     if null resultados 
     then
         print "\nNo se encontraron resultados\n"
-        
+
     else (print "\n===== Resultados de Busqueda =====\n\n";
         imprimirCursos resultados
     );
@@ -428,8 +428,186 @@ fun opcionCursosPorCreditos ruta =
 
 (*========================================================================================================================*)
 
+(*
+Objetivo: Calcular el total de créditos matriculados por cada estudiante.
+Entrada: lista de matrículas con formato (carnet, nombre, curso, créditos, costo).
+Salida: lista de tuplas (carnet, nombre, totalCreditos) con la suma total de créditos por estudiante.
+Validaciones: evita duplicados y acumula correctamente los créditos por cada estudiante.
+*)
+fun calcularCreditosPorEstudiante lista =
+    List.foldl
+        (fn ((carnet, nombre, _, creditos, _), acc) =>
+            case List.find (fn (c, _, _) => c = carnet) acc of
+                NONE => (carnet, nombre, creditos) :: acc
+            | SOME _ =>
+                    List.map
+                        (fn (c, n, total) =>
+                            if c = carnet
+                            then (c, n, total + creditos)
+                            else (c, n, total))
+                        acc)
+        []
+        lista;
+
+(*
+Objetivo: Calcular el total de dinero generado por cada estudiante según sus matrículas.
+Entrada: lista de matrículas con formato (carnet, nombre, curso, créditos, costo).
+Salida: lista de tuplas (carnet, nombre, totalIngreso) con el ingreso acumulado por estudiante.
+Validaciones: convierte créditos a dinero y acumula valores por estudiante sin duplicar registros.
+*)
+fun calcularIngresoPorEstudiante lista =
+    List.foldl
+        (fn ((carnet, nombre, _, creditos, costo), acc) =>
+            let
+                val ingreso = Real.fromInt creditos * costo
+            in
+                case List.find (fn (c, _, _) => c = carnet) acc of
+                    NONE =>
+                        (carnet, nombre, ingreso) :: acc
+                | SOME _ =>
+                        List.map
+                            (fn (c, n, total) =>
+                                if c = carnet
+                                then (c, n, total + ingreso)
+                                else (c, n, total))
+                            acc
+            end)
+        []
+        lista;
+
+
+(*
+Objetivo: Encontrar el estudiante con la mayor cantidad de créditos matriculados.
+Entrada: lista de estudiantes con formato (carnet, nombre, totalCreditos).
+Salida: SOME (carnet, nombre, totalCreditos) del estudiante con mayor carga académica o NONE si la lista está vacía.
+Validaciones: compara valores de créditos para determinar el máximo.
+*)
+fun estudianteConMasCreditos listaEstudiantes =
+    List.foldl
+        (fn ((carnet, nombre, totalCreditos), mejorActual) =>
+            case mejorActual of
+                NONE => SOME (carnet, nombre, totalCreditos)
+
+            | SOME (c, n, t) =>
+                    if totalCreditos > t
+                    then SOME (carnet, nombre, totalCreditos)
+                    else mejorActual)
+        NONE
+        listaEstudiantes;
+
+(*
+Objetivo: Encontrar el estudiante con la menor cantidad de créditos matriculados.
+Entrada: lista de estudiantes con formato (carnet, nombre, totalCreditos).
+Salida: SOME (carnet, nombre, totalCreditos) del estudiante con menor carga académica o NONE si la lista está vacía.
+Validaciones: compara valores de créditos para determinar el mínimo.
+*)
+fun estudianteConMenosCreditos listaEstudiantes =
+    List.foldl
+        (fn ((carnet, nombre, totalCreditos), mejorActual) =>
+            case mejorActual of
+                NONE => SOME (carnet, nombre, totalCreditos)
+
+            | SOME (c, n, t) =>
+                    if totalCreditos < t
+                    then SOME (carnet, nombre, totalCreditos)
+                    else mejorActual)
+        NONE
+        listaEstudiantes;
+
+(*
+Objetivo: Determinar el curso con mayor ingreso total generado.
+Entrada: lista de cursos con formato (curso, ingresoTotal).
+Salida: SOME (curso, ingreso) con el mayor ingreso o NONE si la lista está vacía.
+Validaciones: compara ingresos acumulados para encontrar el máximo.
+*)
+fun cursoConMayorIngreso listaCursos =
+    List.foldl
+        (fn ((curso, ingresoCurso : real), mejorActual) =>
+            case mejorActual of
+                NONE => SOME (curso, ingresoCurso)
+            | SOME (c, i) =>
+                    if ingresoCurso > i
+                    then SOME (curso, ingresoCurso)
+                    else mejorActual)
+        NONE
+        listaCursos;
+
+(*
+Objetivo: Encontrar el estudiante que más dinero ha generado en total.
+Entrada: lista de estudiantes con formato (carnet, nombre, ingresoTotal).
+Salida: SOME (carnet, nombre, ingreso) con el mayor ingreso o NONE si la lista está vacía.
+Validaciones: compara ingresos para determinar el máximo valor.
+*)
+fun estudianteConMayorIngreso lista =
+    List.foldl
+        (fn ((carnet, nombre, ingreso : real), mejorActual) =>
+            case mejorActual of
+                NONE => SOME (carnet, nombre, ingreso)
+            | SOME (c, n, i) =>
+                    if ingreso > i
+                    then SOME (carnet, nombre, ingreso)
+                    else mejorActual)
+        NONE
+        lista;
+        
+(*
+Objetivo: Generar un resumen general del sistema de matrículas.
+Entrada: ruta del archivo CSV.
+Salida: reporte en consola con estadísticas generales (créditos, ingresos y máximos).
+Validaciones: maneja listas vacías y utiliza funciones auxiliares para cálculos.
+*)
+fun resumenGeneral rutaArchivo =
+    let
+        val matriculas = leerCSV rutaArchivo
+
+        val creditosEstudiantes = calcularCreditosPorEstudiante matriculas
+
+        val ingresosEstudiantes = calcularIngresoPorEstudiante matriculas
+
+        val ingresosCursos = ingresosPorCurso matriculas
+
+        val estudianteMasCreditos = estudianteConMasCreditos creditosEstudiantes
+
+        val estudianteMenosCreditos = estudianteConMenosCreditos creditosEstudiantes
+
+        val cursoMasIngreso = cursoConMayorIngreso ingresosCursos
+
+        val estudianteMayorIngreso = estudianteConMayorIngreso ingresosEstudiantes
+
+        val _ = print "\n===== Resumen General =====\n\n"
+
+        val _ =
+            case estudianteMasCreditos of
+                SOME (_, nombre, _) =>
+                    print ("Estudiante con más creditos: " ^ nombre ^ "\n")
+            | NONE => print "\nNo se encontraron resultados\n"
+
+        val _ =
+            case estudianteMenosCreditos of
+                SOME (_, nombre, _) =>
+                    print ("Estudiante con menos creditos: " ^ nombre ^ "\n")
+            | NONE => print "\nNo se encontraron resultados\n"
+
+        val _ =
+            case cursoMasIngreso of
+                SOME (curso, _) =>
+                    print ("Curso con mayor ingreso: " ^ curso ^ "\n")
+            | NONE => print "\nNo se encontraron resultados\n"
+
+        val _ =
+            case estudianteMayorIngreso of
+                SOME (_, nombre, _) =>
+                    print ("Estudiante que mas dinero genera: " ^ nombre ^ "\n")
+            | NONE => print "\nNo se encontraron resultados\n"
+
+    in
+        ()
+    end;
+
+(*========================================================================================================================*)
+
 (* 
-Objetivo: Iniciar el módulo analizador.
+Objetivo: Iniciar el analizador.
 Entrada: ninguna.
 Salida: muestra menú analizador.
 *)
@@ -468,7 +646,7 @@ and menuAnalizador ruta =
         | "2" => (cursosConMasDe5Estudiantes ruta; menuAnalizador ruta)
         | "3" => (buscarMatriculasEstudiante ruta; menuAnalizador ruta)
         | "4" => (opcionCursosPorCreditos ruta; menuAnalizador ruta)
-        | "5" => (print "\n[Pendiente]\n"; menuAnalizador ruta)
+        | "5" => (resumenGeneral ruta; menuAnalizador ruta)
         | "6" => print "\nVolviendo...\n"
         | _   => (print "\nOpcion invalida\n"; menuAnalizador ruta)
     end;

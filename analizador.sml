@@ -4,13 +4,25 @@ Entrada: mensaje a mostrar.
 Salida: string sin salto de línea.
 Validaciones: elimina el \n al final para evitar errores en comparaciones.
 *)
+(*
+Objetivo: Leer una entrada del usuario desde consola.
+Entrada: mensaje a mostrar.
+Salida: string válido sin salto de línea.
+Validaciones: no permite entradas vacías.
+*)
 fun leerEntrada mensaje =
     let
         val _ = print mensaje
         val linea = valOf (TextIO.inputLine TextIO.stdIn)
+        val limpio = String.substring(linea, 0, size linea - 1)
     in
-        String.substring(linea, 0, size linea - 1)
+        if limpio = "" orelse limpio = " "
+        then
+            (print "\nError: no puedes dejarlo vacio.\n";leerEntrada mensaje)
+        else
+            limpio
     end;
+
 
 (* 
 Objetivo: Solicitar una ruta de archivo válida.
@@ -64,7 +76,8 @@ Salida: SOME tupla si es válida, NONE si hay error.
 Validaciones: verifica cantidad de campos y convierte tipos.
 *)
 fun pasarLinea linea =
-    case dividirLinea linea of
+    case dividirLinea linea 
+    of
         [carnet, nombre, curso, creditos, costo] =>
             SOME (
                 limpiarCampo carnet,
@@ -187,6 +200,9 @@ Validaciones: filtra por monto mínimo y máximo.
 fun cursosMayorIngreso rutaArchivo =
     let
         val listaMatriculas = leerCSV rutaArchivo
+        val _ = print "\n==========================================\n"
+        val _ = print "Ranking de cursos por ingreso\n"
+        val _ = print "=========================================="
 
         val montoMinimo = leerReal "\nMonto minimo: "
         val montoMaximo = leerReal "\nMonto maximo: "
@@ -278,6 +294,140 @@ fun cursosConMasDe5Estudiantes rutaArchivo =
 
 (*========================================================================================================================*)
 
+(*
+Objetivo: Buscar matrículas por carnet exacto o nombre parcial.
+Entrada: lista de matrículas y texto de búsqueda.
+Salida: lista filtrada de matrículas.
+Validaciones: compara carnet exacto o si el nombre contiene el texto.
+*)
+fun buscarPorEstudiante listaMatriculas busqueda =
+    List.filter
+        (fn (carnet, nombre, curso, creditos, costo) =>
+            carnet = busqueda orelse String.isSubstring busqueda nombre )
+        listaMatriculas;
+
+(*
+Objetivo: Imprimir resultados de búsqueda de matrículas.
+Entrada: lista de matrículas filtradas.
+Salida: impresión en consola.
+Validaciones: si la lista está vacía, informa al usuario.
+*)
+fun imprimirBusqueda [] = ()
+
+    | imprimirBusqueda ((carnet, nombre, curso, creditos, costo) :: resto) =
+        (
+            print (
+                "Carnet: " ^ carnet ^
+                " | Nombre: " ^ nombre ^
+                " | Curso: " ^ curso ^
+                " | Creditos: " ^ Int.toString creditos ^
+                " | Costo: CRC " ^
+                Real.fmt (StringCvt.FIX (SOME 2)) costo ^ "\n"
+            );
+            imprimirBusqueda resto
+        );
+
+(*
+Objetivo: Mostrar los resultados de búsqueda de matrículas.
+Entrada: lista de matrículas filtradas.
+Salida: impresión en consola de los resultados o mensaje si no hay coincidencias.
+Validaciones: verifica si la lista está vacía antes de imprimir.
+*)
+fun mostrarResultadosBusqueda resultados =
+    if null resultados 
+    then
+        print "\nNo se encontraron resultados\n"
+
+    else (print "\n===== Resultados de Busqueda =====\n\n";
+        imprimirBusqueda resultados)
+
+(*
+Objetivo: Buscar matrículas asociadas a un estudiante (por carnet exacto o nombre parcial).
+Entrada: ruta del archivo CSV.
+Salida: imprime en pantalla todas las matrículas que coinciden con la búsqueda.
+Validaciones: la búsqueda puede ser por coincidencia exacta (carnet) o parcial (nombre).
+*)
+fun buscarMatriculasEstudiante rutaArchivo =
+    let
+        val _ = print "\n==========================================\n"
+
+        val listaMatriculas = leerCSV rutaArchivo
+
+        val _ = print "=================================================================\n"
+        val _ = print "Buscar por carnet (exacto) o nombre del estudiante (parcial)\n"
+        val _ = print "=================================================================\n\n"
+        val busqueda = leerEntrada "Ingrese carnet o nombre del estudiante: "
+
+        val resultados = buscarPorEstudiante listaMatriculas busqueda
+    in
+        mostrarResultadosBusqueda resultados
+    end;
+
+(*========================================================================================================================*)
+
+(*
+Objetivo: Buscar cursos que tengan una cantidad específica de créditos.
+Entrada: lista de matrículas y número de créditos a buscar.
+Salida: lista de cursos que coinciden con ese número de créditos.
+Validaciones: filtra solo por igualdad de créditos.
+*)
+fun buscarCursosPorCreditos listaMatriculas creditos =
+    List.map (fn (_, _, curso, _, _) => curso)
+        (List.filter
+            (fn (_, _, _, c, _) => c = creditos)
+            listaMatriculas);
+
+(*
+Objetivo: Imprimir una lista de cursos en pantalla.
+Entrada: lista de cursos (strings).
+Salida: salida en consola.
+Validaciones: si la lista está vacía, se detiene recursivamente.
+*)
+fun imprimirCursos [] = ()
+
+    | imprimirCursos (curso :: resto) =
+        (print ("Curso: " ^ curso ^ "\n");
+            imprimirCursos resto);
+
+(*
+Objetivo: Mostrar los resultados de búsqueda de cursos por créditos.
+Entrada: lista de cursos.
+Salida: impresión en consola.
+Validaciones: verifica si la lista está vacía antes de imprimir.
+*)
+fun mostrarResultadosBusquedaCursos resultados =
+    if null resultados 
+    then
+        print "\nNo se encontraron resultados\n"
+        
+    else (print "\n===== Resultados de Busqueda =====\n\n";
+        imprimirCursos resultados
+    );
+
+(*
+Objetivo: Ejecutar la opción de búsqueda de cursos por créditos.
+Entrada: ruta del archivo CSV.
+Salida: imprime en consola los cursos que coinciden con los créditos ingresados.
+Validaciones: convierte la entrada a entero y reutiliza funciones de búsqueda.
+*)
+fun opcionCursosPorCreditos ruta =
+    let
+        val listaMatriculas = leerCSV ruta
+
+        val _ = print "\n==========================================\n"
+        val _ = print "Buscar cursos por la cantidad de creditos\n"
+        val _ = print "==========================================\n\n"
+
+        val busqueda = leerEntrada "Ingrese la cantidad de creditos: "
+        val creditos = valOf (Int.fromString busqueda)
+
+        val resultado = buscarCursosPorCreditos listaMatriculas creditos
+    in
+        mostrarResultadosBusquedaCursos resultado
+    end;
+
+(*========================================================================================================================*)
+
 (* 
 Objetivo: Iniciar el módulo analizador.
 Entrada: ninguna.
@@ -316,8 +466,8 @@ and menuAnalizador ruta =
         case opcion of
             "1" => (cursosMayorIngreso ruta; menuAnalizador ruta)
         | "2" => (cursosConMasDe5Estudiantes ruta; menuAnalizador ruta)
-        | "3" => (print "\n[Pendiente]\n"; menuAnalizador ruta)
-        | "4" => (print "\n[Pendiente]\n"; menuAnalizador ruta)
+        | "3" => (buscarMatriculasEstudiante ruta; menuAnalizador ruta)
+        | "4" => (opcionCursosPorCreditos ruta; menuAnalizador ruta)
         | "5" => (print "\n[Pendiente]\n"; menuAnalizador ruta)
         | "6" => print "\nVolviendo...\n"
         | _   => (print "\nOpcion invalida\n"; menuAnalizador ruta)

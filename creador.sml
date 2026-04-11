@@ -1,35 +1,4 @@
-(* 
-Objetivo: Verificar si el archivo existe, si no crearlo con encabezado.
-Entrada: No recibe parámetros.
-Salida: Archivo creado o mensaje indicando que ya existe.
-Validaciones: Maneja error si el archivo no existe usando handle.
-*)
-fun crearArchivo () =
-    let
-        val nombreArchivo = "matricula.csv"
-    in
-        ( let
-            val archivo = TextIO.openAppend nombreArchivo
-            val _ = TextIO.closeOut archivo
-        in
-            (print "------------------\n";
-            print "Archivo ya existe\n";
-            print "------------------\n")
 
-        end )
-
-    handle _ => (* Si ocurre un error por ejemplo,  si el archivo no existe,
-                entramos en este bloque "handle" lo usamos para crear el archivo
-                y escribir el encabezado inicial. *)
-
-        let
-            val archivo = TextIO.openOut nombreArchivo
-            val _ = TextIO.output(archivo, "carnet_estudiante,nombre,curso,creditos,costo_credito\n")
-            val _ = TextIO.closeOut archivo
-        in
-            print "Archivo creado con encabezado\n"
-        end
-end;
 
 (* 
 Objetivo: Limpiar un texto eliminando el salto de línea final.
@@ -213,7 +182,7 @@ fun menu lista =
         val _ = print "====================================\n"
         val _ = print "1. Agregar estudiante\n"
         val _ = print "2. Limpiar catalogo\n"
-        val _ = print "3. Salir\n"
+        val _ = print "3. Volver\n"
         val _ = print "------------------------------\n"
         val _ = print "Seleccione una opcion: "
 
@@ -241,7 +210,7 @@ fun menu lista =
                 end
 
         | "3" =>
-                (print "\n Saliendo del menu creador...\n";lista)
+                (print "\n Volviendo al menu principal\n";lista)
 
         | _ =>
                 (print "\n Opcion invalida\n";menu lista)

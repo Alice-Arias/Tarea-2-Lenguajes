@@ -579,7 +579,7 @@ fun resumenGeneral rutaArchivo =
         val _ =
             case estudianteMasCreditos of
                 SOME (_, nombre, _) =>
-                    print ("Estudiante con más creditos: " ^ nombre ^ "\n")
+                    print ("Estudiante con mas creditos: " ^ nombre ^ "\n")
             | NONE => print "\nNo se encontraron resultados\n"
 
         val _ =
